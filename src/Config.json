@@ -1,0 +1,6 @@
+{
+    "logPath": "./logs/",
+    "maxBook": 10,
+    "mongoDbUrl": "mongodb://localhost:27017/",
+    "run": true
+}
