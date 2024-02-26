@@ -18,8 +18,17 @@ class BookService {
         let bookCurrent: number = 0;
         const maxBook = Config.getInstance().getMaxBook();
         let stop = false;
-
-        while (url) {
+        let book = await axios("https://gutendex.com/books/108");
+        await mongoService.InsertBook(book.data);
+        book = await axios("https://gutendex.com/books/48320");
+        await mongoService.InsertBook(book.data);
+        book = await axios("https://gutendex.com/books/2680");
+        await mongoService.InsertBook(book.data);
+        book = await axios("https://gutendex.com/books/1656");
+        await mongoService.InsertBook(book.data);
+        book = await axios("https://gutendex.com/books/3657");
+        await mongoService.InsertBook(book.data);
+        /*while (url) {
             // Obtiens les résultats d'une page.
             const response: AxiosResponse<ResultPage> = await axios.get(url);
 
@@ -52,7 +61,7 @@ class BookService {
             }
             // Mettre à jour l'URL pour la prochaine page
             url = response.data.next || ''; // vérification qu'il existe une page suivante.
-        }
+        }*/
     }
 
     // Execute la logique métier.
@@ -64,7 +73,7 @@ class BookService {
         mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
 
         // Mise à jour des livres.
-        await this.UpdateBookList(Constants.GUTENDEX_URL, mongoService);
+        await this.UpdateBookList(Config.getInstance().getGutendexUrl(), mongoService);
 
         // Fermer la connexion à la base de données
         await mongoService.CloseConnection();

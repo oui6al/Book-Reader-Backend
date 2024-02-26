@@ -34,8 +34,8 @@ class IndexService {
         }
     }
 
-    Tokenize(text: string): Record<string, number> {
-        const tokenOccurrences: Record<string, number> = {};
+    Tokenize(text: string): {[token: string]: number} {
+        const tokenOccurrences: {[token: string]: number} = {};
         const tokenizer = new natural.WordTokenizer();
         const stopWords = new Set(natural.stopwords);
         const tokens = tokenizer.tokenize(text)?.map(token => token.toLowerCase());
@@ -139,9 +139,11 @@ class IndexService {
 
     }
 
+    
+
     async main() {
         await this.UpdateIndex();
-        await this.UpdateIndexReversed();
+        //await this.UpdateIndexReversed();
     }
 }
 
