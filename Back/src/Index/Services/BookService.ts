@@ -47,8 +47,9 @@ class BookService {
                         stop = true;
                         break;
                     }
+                    
                     // Vérifier le nombre de mots dans le livre
-                    const wordCount = result.metadata?.['rdf:type']?.['http://purl.org/dc/terms/extent']?.[0]?.value;
+                    const wordCount = result.formats[Constants.FORMAT_TXT].split(/[^a-zA-Z]+/).length;
                     if (wordCount && parseInt(wordCount) >= 10000) {
                         //Insertion du livre.
                         await mongoService.InsertBook(result);
