@@ -22,8 +22,15 @@ class IndexService {
                 if (!await mongoService.CheckIndex(book[0])) {
                     const response = await axios.get(book[1]);
                     if (response.status == 200) {
+                        const wordCount = response.data.split('[^//a-zA-Z]+').length;
+                        if(wordCount < 10000){
+                            mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
+                            await mongoService.deleteBook(book[0]);
+                            continue;
+                        }
                         const tokens = this.Tokenize(response.data);
                         const index = new Index(book[0], tokens);
+                        mongoService.SetCollection(Constants.MONGO_INDEX_COLLECTION);
                         await mongoService.InsertIndex(index);
                     }
                 }
