@@ -122,6 +122,21 @@ class MongoService {
         }
     }
 
+    async deleteBook(bookId: number) {
+        if (this.collection) {
+            try {
+                this.logger.getLogger().debug("Suppression du livre : Id = " + bookId);
+                await this.collection.deleteOne({ id: bookId });
+            }
+            catch (error : any) {
+                this.logger.getLogger().error("Impossible de supprimer le livre : Id = " + bookId, error);
+            }
+        }
+        else {
+            throw new Error('Delete book : Collection not set. Call SetConnection first.');
+        }
+    }
+
     async GetAllIndex(): Promise<Array<Index>> {
         if (this.collection) {
             return this.collection.find<Index>({}).toArray();

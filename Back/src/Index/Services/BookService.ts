@@ -44,17 +44,12 @@ class BookService {
                     }
                     // Limite du nombre de livres.
                     if (bookCurrent >= maxBook) {
+                        this.logger.getLogger().info("$n livres ont été insérés.", bookCurrent);
                         stop = true;
                         break;
                     }
-                    
-                    // Vérifier le nombre de mots dans le livre
-                    const wordCount = result.formats[Constants.FORMAT_TXT].split(/[^a-zA-Z]+/).length;
-                    if (wordCount && parseInt(wordCount) >= 10000) {
-                        //Insertion du livre.
-                        await mongoService.InsertBook(result);
-                        bookCurrent++;
-                    }
+                    await mongoService.InsertBook(result);
+                    bookCurrent++;
                 }
                 catch (error: any) 
                 {
