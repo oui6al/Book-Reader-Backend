@@ -38,10 +38,6 @@ class GraphService {
             dotProduct += v1[i] * v2[i];
             magnitude1 += v1[i] * v1[i];
             magnitude2 += v2[i] * v2[i];
-            if(isNaN(dotProduct)) console.log("dotProduct is NaN",v1[i], v2[i]);
-            if(isNaN(magnitude1)) console.log("magnitude1 is NaN",v1[i], v2[i]);
-            if(isNaN(magnitude2)) console.log("magnitude2 is NaN",v1[i], v2[i]);
-
         }
         magnitude1 = Math.sqrt(magnitude1);
         magnitude2 = Math.sqrt(magnitude2);
@@ -110,32 +106,44 @@ class GraphService {
             }
         }
         return undefined;
+
     }
- 
-    insertToNeo4j = async (dist_matrix: { book1_id: number, book2_id: number, similarity: number}[], books: Array<Book>): Promise<void> => {
+
+    insertBooksToNeo4j = async (books: Array<Book>): Promise<void> => {
         const neo4jService = new Neo4jService();
         await neo4jService.connect();
 
         const session = neo4jService.driver.session();
         await session.run("MATCH (n) DETACH DELETE n");
-        let compteur = 0;
+
+        this.logger.getLogger().info("Inserting Nodes...")
+        let count = 0;
+        for(let book of books){
+            try {
+                await neo4jService.addBookNode({
+                    id: book.id,
+                    title: book.title,
+                    subjects: book.subjects,
+                    authors: book.authors
+                });
+                count++;
+            } catch (e) {
+                this.logger.getLogger().error("Failed to add book to neo4j: ", e);
+            }
+        }
+        this.logger.getLogger().info("Inserted books to AuraDB ", count)
+        session.close();
+    }
+ 
+    insertToNeo4j = async (dist_matrix: { book1_id: number, book2_id: number, similarity: number}[], books: Array<Book>): Promise<void> => {
+        const neo4jService = new Neo4jService();
+        await neo4jService.connect();
+        
         for (const element of dist_matrix) {
             const book1 = this.getBook(element.book1_id, books);
             const book2 = this.getBook(element.book2_id, books);
             if (!book1 || !book2) {
                 continue;
-            }
-            try {
-                compteur++;
-                await neo4jService.addBookNode({
-                    id: book1.id,
-                    title: book1.title,
-                    subjects: book1.subjects,
-                    authors: book1.authors
-                });
-                console.log(compteur, " ) Book1: ", book1.id)
-            } catch (e) {
-                this.logger.getLogger().error("Failed to add book to neo4j: ", e);
             }
             if (element.similarity > 0) { 
                 try {
@@ -145,7 +153,6 @@ class GraphService {
                 }
             }
         }
-        session.close();
 
         neo4jService.driver.close();
     }
@@ -161,7 +168,6 @@ class GraphService {
         index.forEach((element) => {
             console.log("Id: ", element.id, "Tokens: ", element.tokens);
         });
-    
     }
 
 
@@ -169,10 +175,10 @@ class GraphService {
         const index = await this.retrieveAllIndex();
         //this.printIndex(index);
         const dist_matrix = this.CalculateSimilarityForAllBooks(index);
+        this.logger.getLogger().info("Dist_matrix: ", dist_matrix.length);
         const books = await this.retrieveAllBooks();
-        this.logger.getLogger().info("Début de Création du graphe Neo4j.");
+        this.insertBooksToNeo4j(books);
         this.insertToNeo4j(dist_matrix, books);
-        this.logger.getLogger().info("Fin de Création du graphe Neo4j.");
         this.printDistMatrix(dist_matrix);
     }
 
