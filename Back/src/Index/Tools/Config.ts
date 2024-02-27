@@ -9,6 +9,7 @@ interface AppConfig {
   maxBook: number;
   mongoDbUrl: string;
   run: boolean;
+  gutendexUrl : string;
 }
 
 class Config {
@@ -18,7 +19,7 @@ class Config {
 
   private constructor() {
     const workingDirectory: string = path.resolve();
-    const configPath = path.resolve(workingDirectory, "dist", Constants.CONFIG_FILENAME);
+    const configPath = path.resolve(workingDirectory,"src/Index", Constants.CONFIG_FILENAME);
     const configData = fs.readFileSync(configPath, 'utf-8');
     this.config = JSON.parse(configData);
     this.config.mongoDbUrl = urljoin(this.config.mongoDbUrl, Constants.MONGO_DBNAME);
@@ -50,6 +51,10 @@ class Config {
 
   public getRunBool(): boolean {
     return this.config.run;
+  }
+
+  public getGutendexUrl(): string{
+    return this.config.gutendexUrl;
   }
 }
 

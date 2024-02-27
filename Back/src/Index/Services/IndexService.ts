@@ -134,9 +134,11 @@ class IndexService {
 
     }
 
+    
+
     async main() {
         await this.UpdateIndex();
-        await this.UpdateIndexReversed();
+        //await this.UpdateIndexReversed();
     }
 }
 

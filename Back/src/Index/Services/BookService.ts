@@ -18,10 +18,20 @@ class BookService {
         let bookCurrent: number = 0;
         const maxBook = Config.getInstance().getMaxBook();
         let stop = false;
-
+        /*let book = await axios("https://gutendex.com/books/108");
+        await mongoService.InsertBook(book.data);
+        book = await axios("https://gutendex.com/books/48320");
+        await mongoService.InsertBook(book.data);
+        book = await axios("https://gutendex.com/books/2680");
+        await mongoService.InsertBook(book.data);
+        book = await axios("https://gutendex.com/books/1656");
+        await mongoService.InsertBook(book.data);
+        book = await axios("https://gutendex.com/books/3657");
+        await mongoService.InsertBook(book.data);*/
         while (url) {
             // Obtiens les résultats d'une page.
             const response: AxiosResponse<ResultPage> = await axios.get(url);
+
 
             // Ajouter les résultats de la page actuelle à la liste
             const results: Book[] = response.data.results;
@@ -37,9 +47,14 @@ class BookService {
                         stop = true;
                         break;
                     }
-                    //Insertion du livre.
-                    await mongoService.InsertBook(result);
-                    bookCurrent++;
+                    
+                    // Vérifier le nombre de mots dans le livre
+                    const wordCount = result.formats[Constants.FORMAT_TXT].split(/[^a-zA-Z]+/).length;
+                    if (wordCount && parseInt(wordCount) >= 10000) {
+                        //Insertion du livre.
+                        await mongoService.InsertBook(result);
+                        bookCurrent++;
+                    }
                 }
                 catch (error: any) 
                 {
@@ -64,7 +79,7 @@ class BookService {
         mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
 
         // Mise à jour des livres.
-        await this.UpdateBookList(Constants.GUTENDEX_URL, mongoService);
+        await this.UpdateBookList(Config.getInstance().getGutendexUrl(), mongoService);
 
         // Fermer la connexion à la base de données
         await mongoService.CloseConnection();

@@ -1,8 +1,8 @@
 class Index {
     id: number;
-    tokens: Record<string, number>;
+    tokens: {[token: string]: number} 
 
-    constructor(id: number, tokens: Record<string, number>) {
+    constructor(id: number, tokens: {[token: string]: number} ) {
         this.id = id;
         this.tokens = tokens;
     }
