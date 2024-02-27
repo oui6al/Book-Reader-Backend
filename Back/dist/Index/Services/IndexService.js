@@ -2,10 +2,9 @@ import axios from "axios";
 import Constants from "../Tools/Constants.js";
 import MongoService from "./MongoService.js";
 import Index from "../Models/Index.js";
-import natural from "natural";
-import { lemmatizer } from "lemmatizer";
 import ReverseIndex from "../Models/ReverseIndex.js";
 import Config from '../Tools/Config.js';
+import Tokenizer from '../Tools/Tokenizer.js';
 class IndexService {
     logger;
     constructor() {
@@ -24,18 +23,14 @@ class IndexService {
                 }
             }
             catch (error) {
-                this.logger.getLogger().error("Impossible de mettre à jour l'index pour le livre : Id = ", book[0], error);
+                this.logger.getLogger().error("Impossible de mettre à jour l'index pour le livre : Id = " + book[0], error);
             }
         }
     }
     Tokenize(text) {
         const tokenOccurrences = {};
-        const tokenizer = new natural.WordTokenizer();
-        const stopWords = new Set(natural.stopwords);
-        const tokens = tokenizer.tokenize(text)?.map(token => token.toLowerCase());
-        const lemmatizedTokens = tokens?.map(token => lemmatizer(token));
-        const filteredTokens = lemmatizedTokens?.filter(token => !stopWords.has(token));
-        filteredTokens?.forEach(token => {
+        const tokens = Tokenizer.TokenizeText(text);
+        tokens?.forEach(token => {
             // Si le token existe déjà dans l'objet, incrémentez le compteur
             if (tokenOccurrences[token]) {
                 tokenOccurrences[token]++;
@@ -71,7 +66,7 @@ class IndexService {
                 await mongoService.InsertOrUpdateReverseIndex(element);
             }
             catch (error) {
-                this.logger.getLogger().error("Impossible d'insérer ou de mettre à jour l'index inversé :", token, error);
+                this.logger.getLogger().error("Impossible d'insérer ou de mettre à jour l'index inversé :" + token, error);
             }
         }
         await mongoService.CloseConnection();

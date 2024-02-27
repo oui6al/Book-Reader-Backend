@@ -95,7 +95,6 @@ class MongoService {
             const existingReverseIndex = await this.collection.findOne({ token: reverseIndex.token });
             try {
                 if (!existingReverseIndex) {
-
                     this.logger.getLogger().debug("Insertion de l'index inversé : Token = " + reverseIndex.token);
                     await this.collection.insertOne(reverseIndex);
                 }
