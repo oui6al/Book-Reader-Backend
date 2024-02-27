@@ -117,6 +117,7 @@ class GraphService {
         await neo4jService.connect();
 
         const session = neo4jService.driver.session();
+        await session.run("MATCH (n) DETACH DELETE n");
         let compteur = 0;
         for (const element of dist_matrix) {
             const book1 = this.getBook(element.book1_id, books);
@@ -136,9 +137,9 @@ class GraphService {
             } catch (e) {
                 this.logger.getLogger().error("Failed to add book to neo4j: ", e);
             }
-            if (element.similarity > 0.7) {
+            if (element.similarity > 0) { 
                 try {
-                    await neo4jService.addRelationBetweenBooks({id: book1.id},  {id: book2.id} ,"neighbours");
+                    await neo4jService.makeGraph({id: book1.id},  {id: book2.id,title: book2.title, subjects: book2.subjects, authors: book2.authors} ,"neighbours", element.similarity);
                 } catch (e) {
                     this.logger.getLogger().error("Failed to add relation between books to neo4j: ", e);
                 }

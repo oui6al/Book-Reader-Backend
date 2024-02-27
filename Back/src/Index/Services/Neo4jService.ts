@@ -18,40 +18,39 @@ class Neo4jService {
         }
     }
 
-    
-    async addBookNode(bookProperties: {id: string, title: string, subjects: string[], authors: string[]}) {
+    addBookNode = async (bookProperties: {id: number, title: string, subjects: string[], authors: {name:string}[]}) => {
         const session = this.driver.session();
         try {
             const result = await session.run(
-                `MERGE (b:Book {id: $bookId, title: $bookTitle, subjects: $bookSubjects, authors: $bookAuthors})
-                RETURN b`,
-                { 
-                    bookId: bookProperties.id, 
-                    bookTitle: bookProperties.title, 
-                    bookSubjects: bookProperties.subjects, 
-                    bookAuthors: bookProperties.authors 
-                }
+                `MERGE (a:Book {id: $id, title: $title, subjects: $subjects, authors: $authors}) RETURN a`,
+                { id: bookProperties.id, title: bookProperties.title, subjects: bookProperties.subjects, authors: bookProperties.authors[0].name }
             );
-            return result.records[0].get('b');
+            return result.records;
         } catch (error) {
-            console.error(`Failed to add or retrieve book: ${error}`);
+            console.error(`Failed to add book to neo4j: ${error}`);
         } finally {
             session.close();
         }
     }
 
 
-    async addRelationBetweenBooks(book1Properties: {id: string}, book2Properties: {id: string}, relationName: string, relationProperties: object = {}) {
+    async makeGraph(book1Properties: {id: string}, book2Properties: {id: string, title: string, subjects: string[], authors: {name:string}[]}, relationName: string, similarity: number) {
         const session = this.driver.session();
         try {
             const result = await session.run(
-                `MATCH (a:Book {id: $book1Id}), (b:Book {id: $book2Id})
-                 MERGE (a)-[r:${relationName} $relationProperties]->(b)
+                 `MERGE (b:Book {id: $book2Id, title: $book2Title, subjects: $book2Subjects, authors: $book2Authors})
+                 WITH b
+                 MATCH (a:Book {id: $book1Id})
+                 WITH a, b
+                 MERGE (a)-[r:${relationName} {similarity: $similarity}]->(b)
                  RETURN r`,
                 { 
                     book1Id: book1Properties.id, 
                     book2Id: book2Properties.id, 
-                    relationProperties 
+                    book2Title: book2Properties.title,
+                    book2Subjects: book2Properties.subjects,
+                    book2Authors: book2Properties.authors[0].name,
+                    similarity: similarity
                 }
             );
             return result.records;

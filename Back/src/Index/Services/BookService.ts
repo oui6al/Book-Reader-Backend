@@ -18,7 +18,7 @@ class BookService {
         let bookCurrent: number = 0;
         const maxBook = Config.getInstance().getMaxBook();
         let stop = false;
-        let book = await axios("https://gutendex.com/books/108");
+        /*let book = await axios("https://gutendex.com/books/108");
         await mongoService.InsertBook(book.data);
         book = await axios("https://gutendex.com/books/48320");
         await mongoService.InsertBook(book.data);
@@ -27,10 +27,11 @@ class BookService {
         book = await axios("https://gutendex.com/books/1656");
         await mongoService.InsertBook(book.data);
         book = await axios("https://gutendex.com/books/3657");
-        await mongoService.InsertBook(book.data);
-        /*while (url) {
+        await mongoService.InsertBook(book.data);*/
+        while (url) {
             // Obtiens les résultats d'une page.
             const response: AxiosResponse<ResultPage> = await axios.get(url);
+
 
             // Ajouter les résultats de la page actuelle à la liste
             const results: Book[] = response.data.results;
@@ -46,9 +47,13 @@ class BookService {
                         stop = true;
                         break;
                     }
-                    //Insertion du livre.
-                    await mongoService.InsertBook(result);
-                    bookCurrent++;
+                    // Vérifier le nombre de mots dans le livre
+                    const wordCount = result.metadata?.['rdf:type']?.['http://purl.org/dc/terms/extent']?.[0]?.value;
+                    if (wordCount && parseInt(wordCount) >= 10000) {
+                        //Insertion du livre.
+                        await mongoService.InsertBook(result);
+                        bookCurrent++;
+                    }
                 }
                 catch (error: any) 
                 {
@@ -61,7 +66,7 @@ class BookService {
             }
             // Mettre à jour l'URL pour la prochaine page
             url = response.data.next || ''; // vérification qu'il existe une page suivante.
-        }*/
+        }
     }
 
     // Execute la logique métier.
