@@ -52,6 +52,20 @@ class MongoService {
             throw new Error('Insert book : Collection not set. Call SetConnection first.');
         }
     }
+    async SetBookWordCount(bookId, wordCount) {
+        if (this.collection) {
+            try {
+                await this.collection.updateOne({ id: bookId }, { $set: { words_count: wordCount } });
+                this.logger.getLogger().debug("Mise à jour du nombre de mots dans le livre : Id = " + bookId);
+            }
+            catch (error) {
+                this.logger.getLogger().error("Impossible de mettre à jour le nombre de mots dans le livre : Id = " + bookId, error);
+            }
+        }
+        else {
+            throw new Error('SetBookWordCount : Collection not set. Call SetConnection first.');
+        }
+    }
     async CheckIndex(indexId) {
         const existingIndex = await this.collection?.findOne({ id: indexId });
         if (!existingIndex) {

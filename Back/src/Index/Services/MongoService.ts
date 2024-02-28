@@ -65,6 +65,25 @@ class MongoService {
         }
     }
 
+    async SetBookWordCount(bookId: number, wordCount: number)
+    {
+        if (this.collection) {
+            try {
+                await this.collection.updateOne(
+                    {id: bookId},
+                    {$set: {words_count: wordCount}}
+                );
+                this.logger.getLogger().debug("Mise à jour du nombre de mots dans le livre : Id = " + bookId);
+            }
+            catch (error : any) {
+                this.logger.getLogger().error("Impossible de mettre à jour le nombre de mots dans le livre : Id = " + bookId, error);
+            }
+        }
+        else {
+            throw new Error('SetBookWordCount : Collection not set. Call SetConnection first.');
+        }
+    }
+
     async CheckIndex(indexId: number) {
         const existingIndex = await this.collection?.findOne({ id: indexId });
         if (!existingIndex) {

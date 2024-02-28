@@ -19,12 +19,12 @@ class SearchService {
         mongoService.CloseConnection();
     }
     async SimpleSearch(searchString) {
-        return await this.GetBooks(this.OrderByScore(this.Search(searchString, false)));
+        return await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
     }
     async AdvancedSearch(searchRegex) {
-        return await this.GetBooks(this.OrderByScore(this.Search(searchRegex, true)));
+        return await this.GetBooks(this.OrderByScore(await this.Search(searchRegex, true)));
     }
-    Search(searchString, useRegex) {
+    async Search(searchString, useRegex) {
         let totalOccurences = [];
         if (useRegex) {
             const tokenRecords = this.RegexSearch(searchString);
@@ -42,6 +42,7 @@ class SearchService {
             });
         }
         // Calculer un score un peu plus complexe?
+        totalOccurences = await this.CalculateTfIdf(totalOccurences);
         return this.ResultSum(totalOccurences);
     }
     ResultSum(scores) {
@@ -55,6 +56,29 @@ class SearchService {
                     result[bookId] = score;
                 }
             });
+        });
+        return result;
+    }
+    async CalculateTfIdf(scores) {
+        // Connection à la base pour récupérer le nombre de mots de chaque livre.
+        const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());
+        await mongoService.OpenConnection();
+        mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
+        const books = (await mongoService.GetAllBooks()).map(book => [book.id, book.words_count]);
+        await mongoService.CloseConnection();
+        const result = [];
+        scores.forEach((tokenScore) => {
+            const tokenResult = {};
+            const IDF = Math.log((books.length + 1) / (Object.keys(tokenScore).length + 1));
+            Object.entries(tokenScore).forEach(([bookId, score]) => {
+                const wordCount = books.find(([string, _]) => string == bookId);
+                if (wordCount) {
+                    const TF = score / wordCount[1];
+                    const TFIDF = TF * IDF;
+                    tokenResult[bookId] = TFIDF;
+                }
+            });
+            result.push(tokenResult);
         });
         return result;
     }
@@ -104,5 +128,5 @@ class SearchService {
 const config = Config.getInstance();
 const execute = new SearchService();
 await execute.GetReverseIndex();
-const simple = await execute.SimpleSearch("frankenstein and jesus and alice");
+const simple = await execute.SimpleSearch("jesus and abraham");
 const regex = await execute.AdvancedSearch("^je.+");

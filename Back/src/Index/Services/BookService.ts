@@ -39,8 +39,9 @@ class BookService {
 
             for (const result of results) {
                 try {
+                    const book: Book = new Book(result);
                     // Filtres du livre.
-                    if (result.formats[Constants.FORMAT_HTML] == undefined || result.formats[Constants.FORMAT_TXT] == undefined) { //Manque html ou txt.
+                    if (book.formats[Constants.FORMAT_HTML] == undefined || book.formats[Constants.FORMAT_TXT] == undefined) { //Manque html ou txt.
                         break;
                     }
                     // Limite du nombre de livres.
@@ -49,7 +50,7 @@ class BookService {
                         stop = true;
                         break;
                     }
-                    await mongoService.InsertBook(result);
+                    await mongoService.InsertBook(book);
                     bookCurrent++;
                 }
                 catch (error: any) 
