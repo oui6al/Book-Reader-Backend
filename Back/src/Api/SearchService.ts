@@ -1,3 +1,4 @@
+import Book from '../Index/Models/Book.js';
 import ReverseIndex from '../Index/Models/ReverseIndex.js';
 import MongoService from '../Index/Services/MongoService.js';
 import Config from '../Index/Tools/Config.js';
@@ -25,12 +26,12 @@ class SearchService {
         mongoService.CloseConnection();
     }
 
-    SimpleSearch(searchString: string): [string, number][] {
-        return this.OrderByScore(this.Search(searchString, false));
+    async SimpleSearch(searchString: string): Promise<Array<Book>> {
+        return await this.GetBooks(this.OrderByScore(this.Search(searchString, false)));
     }
 
-    AdvancedSearch(searchRegex: string): [string, number][] {
-        return this.OrderByScore(this.Search(searchRegex, true));
+    async AdvancedSearch(searchRegex: string): Promise<Array<Book>>  {
+        return await this.GetBooks(this.OrderByScore(this.Search(searchRegex, true)));
     }
 
     Search(searchString: string, useRegex: boolean): Record<string, number> {
@@ -75,6 +76,35 @@ class SearchService {
         return result;
     }
 
+    async GetBooks(scores: [string, number][]): Promise<Array<Book>>
+    {
+        const books: Array<Book> = [];
+        // Connection à la base.
+        const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());
+        await mongoService.OpenConnection();
+        mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
+        
+        for (const [bookId, score] of scores) {
+            try {
+              const bookIdParsed = parseInt(bookId, 10);
+          
+              if (!isNaN(bookIdParsed)) {
+                // Obtenir le livre par son ID et ajouter à la liste
+                const book: Book = await mongoService.GetBook(bookIdParsed);
+                if (book) {
+                  books.push(book);
+                }
+              } else {
+                this.logger.getLogger().warn(`La conversion de l'id ${bookId} en nombre a échoué.`);
+              }
+            } catch (error : any) {
+              this.logger.getLogger().error(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
+            }
+          }
+          await mongoService.CloseConnection();
+          return books;
+    }
+
     OrderByScore(scores: Record<string, number>): [string, number][]{
         const entriesArray = Object.entries(scores);
     
@@ -96,8 +126,7 @@ class SearchService {
 }
 
 const config = Config.getInstance();
-const logger = Config.getLoggerInstance();
 const execute = new SearchService();
 await execute.GetReverseIndex();
-const simple = execute.SimpleSearch("jesus and abraham");
-const regex = execute.AdvancedSearch("^je.+");
+const simple = await execute.SimpleSearch("jesus and abraham");
+const regex = await execute.AdvancedSearch("^je.+");

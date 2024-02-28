@@ -94,6 +94,18 @@ class MongoService {
             throw new Error('Insert reverse index : Collection not set. Call SetConnection first.');
         }
     }
+    async GetBook(bookId) {
+        if (this.collection) {
+            const existingIndex = await this.collection?.findOne({ id: bookId });
+            if (existingIndex) {
+                return existingIndex;
+            }
+            throw new Error("Unable to find the book with the id : " + bookId);
+        }
+        else {
+            throw new Error('Get Book : Collection not set. Call SetConnection first.');
+        }
+    }
     async GetAllBooks() {
         if (this.collection) {
             return this.collection.find({}).toArray();
