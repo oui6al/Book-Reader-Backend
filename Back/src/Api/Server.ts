@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import SearchService from './SearchService.js';
+import  SearchService  from './SearchService.js';
 
 const app = express();
 app.use(express.json());
@@ -12,7 +12,8 @@ const searchService = new SearchService();
 app.post('/api/search', async (req, res) => {
     try {
         const input = req.body.query;
-        const books = searchService.SimpleSearch(input);
+        const books =  await searchService.SimpleSearch(input); 
+        res.json(books);
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'An error occurred' });
@@ -23,7 +24,8 @@ app.post('/api/search', async (req, res) => {
 app.post('/api/advanced-search', async (req, res) => {
     try {
         const {input} = req.body;
-        res.json(searchService.AdvancedSearch(input))
+        const books = await searchService.AdvancedSearch(input)
+        res.json(books);
     } catch (error) {
         res.status(500).json({ error: 'An error occurred' });
     }
@@ -41,3 +43,4 @@ app.get('/api/ReadBook/:id', async (req, res) => {
 app.listen(3000, () => {
     console.log('Server is running on port 3000');
 });
+

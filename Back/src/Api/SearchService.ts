@@ -15,7 +15,6 @@ class SearchService {
     }
 
     async GetReverseIndex() {
-        this.logger.getLogger().info("Chargement de l'index inversé.");
         // Connection à la base.
         const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());
         await mongoService.OpenConnection();
@@ -27,7 +26,11 @@ class SearchService {
     }
 
     async SimpleSearch(searchString: string): Promise<Array<Book>> {
-        return await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
+        await this.GetReverseIndex();
+        let books: Array<Book> = []; 
+        books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
+        console.log("simplesearch", books);
+        return books;
     }
 
     async AdvancedSearch(searchRegex: string): Promise<Array<Book>>  {
@@ -126,12 +129,13 @@ class SearchService {
                   books.push(book);
                 }
               } else {
-                this.logger.getLogger().warn(`La conversion de l'id ${bookId} en nombre a échoué.`);
+                console.log(`La conversion de l'id ${bookId} en nombre a échoué.`);
               }
             } catch (error : any) {
-              this.logger.getLogger().error(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
+              console.log(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
             }
           }
+          console.log("gtBooks", books)
           await mongoService.CloseConnection();
           return books;
     }

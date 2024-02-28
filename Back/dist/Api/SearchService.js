@@ -19,7 +19,10 @@ class SearchService {
         mongoService.CloseConnection();
     }
     async SimpleSearch(searchString) {
-        return await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
+        let books = [];
+        books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
+        console.log("simplesearch", books);
+        return books;
     }
     async AdvancedSearch(searchRegex) {
         return await this.GetBooks(this.OrderByScore(await this.Search(searchRegex, true)));
@@ -96,16 +99,20 @@ class SearchService {
                     const book = await mongoService.GetBook(bookIdParsed);
                     if (book) {
                         books.push(book);
+                        console.log("GetBooks, ", book, books);
                     }
+                    else
+                        console.log("GetBooks, ", book, books);
                 }
                 else {
-                    this.logger.getLogger().warn(`La conversion de l'id ${bookId} en nombre a échoué.`);
+                    console.log(`La conversion de l'id ${bookId} en nombre a échoué.`);
                 }
             }
             catch (error) {
-                this.logger.getLogger().error(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
+                console.log(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
             }
         }
+        console.log("gtBooks", books);
         await mongoService.CloseConnection();
         return books;
     }
@@ -125,4 +132,6 @@ class SearchService {
         return results ? results : null;
     }
 }
+
 export default SearchService;
+
