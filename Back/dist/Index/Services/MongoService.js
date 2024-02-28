@@ -102,6 +102,20 @@ class MongoService {
             throw new Error('Get all books : Database not connected. Call ConnectToDatabase first.');
         }
     }
+    async deleteBook(bookId) {
+        if (this.collection) {
+            try {
+                this.logger.getLogger().debug("Suppression du livre : Id = " + bookId);
+                await this.collection.deleteOne({ id: bookId });
+            }
+            catch (error) {
+                this.logger.getLogger().error("Impossible de supprimer le livre : Id = " + bookId, error);
+            }
+        }
+        else {
+            throw new Error('Delete book : Collection not set. Call SetConnection first.');
+        }
+    }
     async GetAllIndex() {
         if (this.collection) {
             return this.collection.find({}).toArray();

@@ -30,8 +30,8 @@ class BookService {
         await mongoService.InsertBook(book.data);*/
         while (url) {
             // Obtiens les résultats d'une page.
-            const response: AxiosResponse<ResultPage> = await axios.get(url);
-
+            const axiosInstance = CreateAxiosInstance(url, 10000);
+            const response: AxiosResponse<ResultPage> = await axiosInstance.get(url);
 
             // Ajouter les résultats de la page actuelle à la liste
             const results: Book[] = response.data.results;

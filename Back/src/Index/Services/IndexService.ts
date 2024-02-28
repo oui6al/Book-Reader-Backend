@@ -1,4 +1,3 @@
-import axios from "axios";
 import Constants from "../Tools/Constants.js";
 import MongoService from "./MongoService.js";
 import Index from "../Models/Index.js"
@@ -6,6 +5,7 @@ import ReverseIndex from "../Models/ReverseIndex.js";
 import Config from '../Tools/Config.js';
 import Logger from '../Tools/Logger.js';
 import Tokenizer from '../Tools/Tokenizer.js'
+import CreateAxiosInstance from "./AxiosService.js";
 
 class IndexService {
     logger : Logger;
@@ -18,10 +18,13 @@ class IndexService {
 
         for (const book of books) {
             try {
+                mongoService.SetCollection(Constants.MONGO_INDEX_COLLECTION);
                 if (!await mongoService.CheckIndex(book[0])) {
-                    const response = await axios.get(book[1]);
+                    const axiosInstance = CreateAxiosInstance(book[1], 10000);
+                    const response = await axiosInstance.get(book[1]);
                     if (response.status == 200) {
-                        const wordCount = response.data.split('[^//a-zA-Z]+').length;
+                        const words = response.data.split(/[^a-zA-Z]+/);
+                        const wordCount = words.length;
                         if(wordCount < 10000){
                             mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
                             await mongoService.deleteBook(book[0]);
@@ -29,7 +32,6 @@ class IndexService {
                         }
                         const tokens = this.Tokenize(response.data);
                         const index = new Index(book[0], tokens);
-                        mongoService.SetCollection(Constants.MONGO_INDEX_COLLECTION);
                         await mongoService.InsertIndex(index);
                     }
                 }
@@ -145,7 +147,7 @@ class IndexService {
 
     async main() {
         await this.UpdateIndex();
-        //await this.UpdateIndexReversed();
+        await this.UpdateIndexReversed();
     }
 }
 
