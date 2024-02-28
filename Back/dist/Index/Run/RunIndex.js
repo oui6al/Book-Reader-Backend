@@ -1,19 +1,13 @@
-import BookService from "./Services/BookService.js";
-import GraphService from "./Services/GraphService.js";
-import IndexService from "./Services/IndexService.js";
-import Config from "./Tools/Config.js";
-class App {
+import IndexService from "../Services/IndexService.js";
+import Config from "../Tools/Config.js";
+class RunIndex {
     config;
     logger;
-    bookService;
     indexService;
-    graphService;
     constructor() {
         this.config = Config.getInstance();
         this.logger = Config.getLoggerInstance();
-        this.bookService = new BookService();
         this.indexService = new IndexService();
-        this.graphService = new GraphService();
     }
     async main() {
         this.logger.getLogger().info("Paramètres d'execution chargés via le fichier Config.json :");
@@ -25,14 +19,10 @@ class App {
             return;
         }
         this.logger.getLogger().info("Début de l'éxecution du batch de mise à jour des index.");
-        await this.bookService.main();
-        await this.indexService.main();
+        await this.indexService.UpdateIndex();
         this.logger.getLogger().info("Fin de l'éxecution du batch de mise à jour des index.");
-        this.logger.getLogger().info("Début de Création du graphe Neo4j.");
-        await this.graphService.main();
-        this.logger.getLogger().info("Fin de Création du graphe Neo4j.");
     }
 }
-const execute = new App();
+const execute = new RunIndex();
 await execute.main();
-export default App;
+export default RunIndex;

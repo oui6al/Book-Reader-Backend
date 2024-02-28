@@ -94,12 +94,38 @@ class MongoService {
             throw new Error('Insert reverse index : Collection not set. Call SetConnection first.');
         }
     }
+    async GetBook(bookId) {
+        if (this.collection) {
+            const existingIndex = await this.collection?.findOne({ id: bookId });
+            if (existingIndex) {
+                return existingIndex;
+            }
+            throw new Error("Unable to find the book with the id : " + bookId);
+        }
+        else {
+            throw new Error('Get Book : Collection not set. Call SetConnection first.');
+        }
+    }
     async GetAllBooks() {
         if (this.collection) {
             return this.collection.find({}).toArray();
         }
         else {
             throw new Error('Get all books : Database not connected. Call ConnectToDatabase first.');
+        }
+    }
+    async deleteBook(bookId) {
+        if (this.collection) {
+            try {
+                this.logger.getLogger().debug("Suppression du livre : Id = " + bookId);
+                await this.collection.deleteOne({ id: bookId });
+            }
+            catch (error) {
+                this.logger.getLogger().error("Impossible de supprimer le livre : Id = " + bookId, error);
+            }
+        }
+        else {
+            throw new Error('Delete book : Collection not set. Call SetConnection first.');
         }
     }
     async GetAllIndex() {

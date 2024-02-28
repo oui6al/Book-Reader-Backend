@@ -18,11 +18,11 @@ class SearchService {
         this.reverseIndex = await mongoService.GetAllReversedIndex();
         mongoService.CloseConnection();
     }
-    SimpleSearch(searchString) {
-        return this.OrderByScore(this.Search(searchString, false));
+    async SimpleSearch(searchString) {
+        return await this.GetBooks(this.OrderByScore(this.Search(searchString, false)));
     }
-    AdvancedSearch(searchRegex) {
-        return this.OrderByScore(this.Search(searchRegex, true));
+    async AdvancedSearch(searchRegex) {
+        return await this.GetBooks(this.OrderByScore(this.Search(searchRegex, true)));
     }
     Search(searchString, useRegex) {
         let totalOccurences = [];
@@ -58,6 +58,33 @@ class SearchService {
         });
         return result;
     }
+    async GetBooks(scores) {
+        const books = [];
+        // Connection à la base.
+        const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());
+        await mongoService.OpenConnection();
+        mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
+        for (const [bookId, score] of scores) {
+            try {
+                const bookIdParsed = parseInt(bookId, 10);
+                if (!isNaN(bookIdParsed)) {
+                    // Obtenir le livre par son ID et ajouter à la liste
+                    const book = await mongoService.GetBook(bookIdParsed);
+                    if (book) {
+                        books.push(book);
+                    }
+                }
+                else {
+                    this.logger.getLogger().warn(`La conversion de l'id ${bookId} en nombre a échoué.`);
+                }
+            }
+            catch (error) {
+                this.logger.getLogger().error(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
+            }
+        }
+        await mongoService.CloseConnection();
+        return books;
+    }
     OrderByScore(scores) {
         const entriesArray = Object.entries(scores);
         entriesArray.sort((a, b) => b[1] - a[1]);
@@ -75,8 +102,7 @@ class SearchService {
     }
 }
 const config = Config.getInstance();
-const logger = Config.getLoggerInstance();
 const execute = new SearchService();
 await execute.GetReverseIndex();
-const simple = execute.SimpleSearch("jesus and abraham");
-const regex = execute.AdvancedSearch("^je.+");
+const simple = await execute.SimpleSearch("frankenstein and jesus and alice");
+const regex = await execute.AdvancedSearch("^je.+");

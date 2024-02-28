@@ -5,6 +5,7 @@ import Book from '../Models/Book.js';
 import Constants from '../Tools/Constants.js';
 import Config from '../Tools/Config.js';
 import Logger from '../Tools/Logger.js';
+import CreateAxiosInstance from './AxiosService.js'
 
 
 class BookService {
@@ -30,8 +31,8 @@ class BookService {
         await mongoService.InsertBook(book.data);*/
         while (url) {
             // Obtiens les résultats d'une page.
-            const response: AxiosResponse<ResultPage> = await axios.get(url);
-
+            const axiosInstance = CreateAxiosInstance(url, 10000);
+            const response: AxiosResponse<ResultPage> = await axiosInstance.get(url);
 
             // Ajouter les résultats de la page actuelle à la liste
             const results: Book[] = response.data.results;
