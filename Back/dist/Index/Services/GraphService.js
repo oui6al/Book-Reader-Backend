@@ -2,6 +2,7 @@ import Config from "../Tools/Config.js";
 import Constants from "../Tools/Constants.js";
 import MongoService from "./MongoService.js";
 import Neo4jService from "./Neo4jService.js";
+import GraphBook from "../Models/GraphBook.js";
 class GraphService {
     logger;
     constructor() {
@@ -92,19 +93,15 @@ class GraphService {
     };
     insertBooksToNeo4j = async (books) => {
         const neo4jService = new Neo4jService();
-        await neo4jService.connect();
+        await neo4jService.Connect();
         const session = neo4jService.driver.session();
         await session.run("MATCH (n) DETACH DELETE n");
         this.logger.getLogger().info("Inserting Nodes...");
         let count = 0;
         for (let book of books) {
+            const graphBook = new GraphBook(book.id, book.title, book.subjects, book.authors);
             try {
-                await neo4jService.addBookNode({
-                    id: book.id,
-                    title: book.title,
-                    subjects: book.subjects,
-                    authors: book.authors
-                });
+                await neo4jService.AddBookNode(graphBook);
                 count++;
             }
             catch (e) {
@@ -116,7 +113,7 @@ class GraphService {
     };
     insertToNeo4j = async (dist_matrix, books) => {
         const neo4jService = new Neo4jService();
-        await neo4jService.connect();
+        await neo4jService.Connect();
         for (const element of dist_matrix) {
             const book1 = this.getBook(element.book1_id, books);
             const book2 = this.getBook(element.book2_id, books);
@@ -125,7 +122,8 @@ class GraphService {
             }
             if (element.similarity > 0) {
                 try {
-                    await neo4jService.makeGraph({ id: book1.id }, { id: book2.id, title: book2.title, subjects: book2.subjects, authors: book2.authors }, "neighbours", element.similarity);
+                    const graphBook = new GraphBook(book2.id, book2.title, book2.subjects, book2.authors);
+                    await neo4jService.MakeGraph({ id: book1.id }, graphBook, "neighbours", element.similarity);
                 }
                 catch (e) {
                     this.logger.getLogger().error("Failed to add relation between books to neo4j: ", e);
@@ -150,8 +148,8 @@ class GraphService {
         const dist_matrix = this.CalculateSimilarityForAllBooks(index);
         this.logger.getLogger().info("Dist_matrix: ", dist_matrix.length);
         const books = await this.retrieveAllBooks();
-        this.insertBooksToNeo4j(books);
-        this.insertToNeo4j(dist_matrix, books);
+        await this.insertBooksToNeo4j(books);
+        await this.insertToNeo4j(dist_matrix, books);
         this.printDistMatrix(dist_matrix);
     }
 }

@@ -9,7 +9,6 @@ class SearchService {
         this.logger = Config.getLoggerInstance();
     }
     async GetReverseIndex() {
-        this.logger.getLogger().info("Chargement de l'index inversé.");
         // Connection à la base.
         const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());
         await mongoService.OpenConnection();
@@ -19,14 +18,11 @@ class SearchService {
         mongoService.CloseConnection();
     }
     async SimpleSearch(searchString) {
-<<<<<<< HEAD
+        await this.GetReverseIndex();
         let books = [];
-        books = await this.GetBooks(this.OrderByScore(this.Search(searchString, false)));
+        books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
         console.log("simplesearch", books);
         return books;
-=======
-        return await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
->>>>>>> b3eb5ec03c5f29127ff9d881cfb2b00587b43b8a
     }
     async AdvancedSearch(searchRegex) {
         return await this.GetBooks(this.OrderByScore(await this.Search(searchRegex, true)));
@@ -103,10 +99,7 @@ class SearchService {
                     const book = await mongoService.GetBook(bookIdParsed);
                     if (book) {
                         books.push(book);
-                        console.log("GetBooks, ", book, books);
                     }
-                    else
-                        console.log("GetBooks, ", book, books);
                 }
                 else {
                     console.log(`La conversion de l'id ${bookId} en nombre a échoué.`);
@@ -136,12 +129,4 @@ class SearchService {
         return results ? results : null;
     }
 }
-<<<<<<< HEAD
 export default SearchService;
-=======
-const config = Config.getInstance();
-const execute = new SearchService();
-await execute.GetReverseIndex();
-const simple = await execute.SimpleSearch("jesus and abraham");
-const regex = await execute.AdvancedSearch("^je.+");
->>>>>>> b3eb5ec03c5f29127ff9d881cfb2b00587b43b8a
