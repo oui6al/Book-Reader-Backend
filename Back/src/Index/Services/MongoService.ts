@@ -132,7 +132,7 @@ class MongoService {
         }
     }
 
-    async GetBook(bookId: number): Promise<Book>{
+    async getBook(bookId: number): Promise<Book>{
         if (this.collection){
             const existingIndex = await this.collection?.findOne<Book>({ id: bookId });
             if(existingIndex){

@@ -29,11 +29,11 @@ class SearchService {
         await this.GetReverseIndex();
         let books: Array<Book> = []; 
         books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
-        console.log("simplesearch", books);
         return books;
     }
 
     async AdvancedSearch(searchRegex: string): Promise<Array<Book>>  {
+        await this.GetReverseIndex();
         return await this.GetBooks(this.OrderByScore(await this.Search(searchRegex, true)));
     }
 
@@ -124,20 +124,29 @@ class SearchService {
           
               if (!isNaN(bookIdParsed)) {
                 // Obtenir le livre par son ID et ajouter à la liste
-                const book: Book = await mongoService.GetBook(bookIdParsed);
+                const book: Book = await mongoService.getBook(bookIdParsed);
                 if (book) {
                   books.push(book);
                 }
               } else {
-                console.log(`La conversion de l'id ${bookId} en nombre a échoué.`);
+                this.logger.getLogger().debug(`La conversion de l'id ${bookId} en nombre a échoué.`);
               }
             } catch (error : any) {
-              console.log(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
+              this.logger.getLogger().error(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
             }
           }
-          console.log("gtBooks", books)
           await mongoService.CloseConnection();
           return books;
+    }
+
+    async fetchBook(id: number): Promise<Book | null> {
+        // Connection à la base.
+        const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());
+        await mongoService.OpenConnection();
+        mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
+        const book = await mongoService.getBook(id);
+        await mongoService.CloseConnection();
+        return book;
     }
 
     OrderByScore(scores: Record<string, number>): [string, number][]{
