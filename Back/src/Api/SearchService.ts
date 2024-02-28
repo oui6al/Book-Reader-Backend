@@ -156,8 +156,4 @@ class SearchService {
     }
 }
 
-const config = Config.getInstance();
-const execute = new SearchService();
-await execute.GetReverseIndex();
-const simple = await execute.SimpleSearch("jesus and abraham");
-const regex = await execute.AdvancedSearch("^je.+");
+export default SearchService;
