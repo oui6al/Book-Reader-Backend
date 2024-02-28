@@ -20,13 +20,15 @@ class IndexService {
                     if (response.status == 200) {
                         const words = response.data.split(/[^a-zA-Z]+/);
                         const wordCount = words.length;
+                        mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
                         if (wordCount < 10000) {
-                            mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
                             await mongoService.deleteBook(book[0]);
                             continue;
                         }
+                        await mongoService.SetBookWordCount(book[0], wordCount);
                         const tokens = this.Tokenize(response.data);
                         const index = new Index(book[0], tokens);
+                        mongoService.SetCollection(Constants.MONGO_INDEX_COLLECTION);
                         await mongoService.InsertIndex(index);
                     }
                 }

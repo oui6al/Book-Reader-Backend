@@ -28,16 +28,16 @@ class SearchService {
     async SimpleSearch(searchString: string): Promise<Array<Book>> {
         await this.GetReverseIndex();
         let books: Array<Book> = []; 
-        books = await this.GetBooks(this.OrderByScore(this.Search(searchString, false)));
+        books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
         console.log("simplesearch", books);
         return books;
     }
 
     async AdvancedSearch(searchRegex: string): Promise<Array<Book>>  {
-        return await this.GetBooks(this.OrderByScore(this.Search(searchRegex, true)));
+        return await this.GetBooks(this.OrderByScore(await this.Search(searchRegex, true)));
     }
 
-    Search(searchString: string, useRegex: boolean): Record<string, number> {
+    async Search(searchString: string, useRegex: boolean): Promise<Record<string, number>> {
         let totalOccurences: Array<Record<string, number>> = [];
         if (useRegex) {
             const tokenRecords = this.RegexSearch(searchString);
@@ -57,6 +57,8 @@ class SearchService {
 
         }
         // Calculer un score un peu plus complexe?
+
+        totalOccurences = await this.CalculateTfIdf(totalOccurences);
 
         return this.ResultSum(totalOccurences);
     }
@@ -79,7 +81,37 @@ class SearchService {
         return result;
     }
 
-    async GetBooks(scores: [string, number][]): Promise<Array<Book>>{
+    async CalculateTfIdf(scores : Array<Record<string, number>>)
+    {
+        // Connection à la base pour récupérer le nombre de mots de chaque livre.
+        const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());
+        await mongoService.OpenConnection();
+        mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
+        const books: Array<[string, number]> = (await mongoService.GetAllBooks()).map(book => [book.id, book.words_count]);
+        await mongoService.CloseConnection();
+
+        const result : Array<Record<string, number>> = [];
+
+        scores.forEach((tokenScore: Record<string, number>) => {
+            const tokenResult : Record<string, number> = {};
+            const IDF = Math.log((books.length + 1) / (Object.keys(tokenScore).length + 1));
+            Object.entries(tokenScore).forEach(([bookId, score]) => {
+                const wordCount = books.find(([string, _]) => string == bookId);
+                if(wordCount)
+                {
+                    const TF = score / wordCount[1];
+                    const TFIDF = TF * IDF;
+                    tokenResult[bookId] = TFIDF;
+                }
+            });
+            result.push(tokenResult);
+        });
+
+        return result;
+    }
+
+    async GetBooks(scores: [string, number][]): Promise<Array<Book>>
+    {
         const books: Array<Book> = [];
         // Connection à la base.
         const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());

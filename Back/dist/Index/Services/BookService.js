@@ -1,4 +1,5 @@
 import MongoService from './MongoService.js';
+import Book from '../Models/Book.js';
 import Constants from '../Tools/Constants.js';
 import Config from '../Tools/Config.js';
 import CreateAxiosInstance from './AxiosService.js';
@@ -30,8 +31,9 @@ class BookService {
             const results = response.data.results;
             for (const result of results) {
                 try {
+                    const book = new Book(result);
                     // Filtres du livre.
-                    if (result.formats[Constants.FORMAT_HTML] == undefined || result.formats[Constants.FORMAT_TXT] == undefined) { //Manque html ou txt.
+                    if (book.formats[Constants.FORMAT_HTML] == undefined || book.formats[Constants.FORMAT_TXT] == undefined) { //Manque html ou txt.
                         break;
                     }
                     // Limite du nombre de livres.
@@ -40,7 +42,7 @@ class BookService {
                         stop = true;
                         break;
                     }
-                    await mongoService.InsertBook(result);
+                    await mongoService.InsertBook(book);
                     bookCurrent++;
                 }
                 catch (error) {
