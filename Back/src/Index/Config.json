@@ -1,6 +1,6 @@
 {
     "logPath": "./logs/",
-    "maxBook": 3000,
+    "maxBook": 100,
     "mongoDbUrl": "mongodb://localhost:27017/",
     "run": true,
     "gutendexUrl" : "http://gutendex.com/books/?languages=en"
