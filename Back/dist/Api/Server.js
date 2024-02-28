@@ -10,7 +10,6 @@ app.post('/api/search', async (req, res) => {
     try {
         const input = req.body.query;
         const books = await searchService.SimpleSearch(input);
-        console.log("api ", books);
         res.json(books);
     }
     catch (error) {

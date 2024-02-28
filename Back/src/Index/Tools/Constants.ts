@@ -7,8 +7,10 @@ class Constants{
     static readonly FORMAT_HTML: string = "text/html";
     static readonly CONFIG_FILENAME : string = "Config.json";
     static readonly NEO4J_URL : string = "neo4j+s://959e849a.databases.neo4j.io";
-    static readonly NEO4J_USER : string = "neo4j"
-    static readonly NEO4J_PASSWORD : string = "4nZUbu7sfIobz9eBcKv5MjJaPKB_nGixKYpI152dNnI"
+    static readonly NEO4J_USER : string = "neo4j";
+    static readonly NEO4J_PASSWORD : string = "4nZUbu7sfIobz9eBcKv5MjJaPKB_nGixKYpI152dNnI";
+    static readonly GRAPH_SIMILARITY : number = 0.75;
+
 }
 
 export default Constants;
