@@ -9,7 +9,6 @@ class SearchService {
         this.logger = Config.getLoggerInstance();
     }
     async GetReverseIndex() {
-        this.logger.getLogger().info("Chargement de l'index inversé.");
         // Connection à la base.
         const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());
         await mongoService.OpenConnection();
@@ -19,6 +18,7 @@ class SearchService {
         mongoService.CloseConnection();
     }
     async SimpleSearch(searchString) {
+        await this.GetReverseIndex();
         let books = [];
         books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
         console.log("simplesearch", books);
@@ -99,10 +99,7 @@ class SearchService {
                     const book = await mongoService.GetBook(bookIdParsed);
                     if (book) {
                         books.push(book);
-                        console.log("GetBooks, ", book, books);
                     }
-                    else
-                        console.log("GetBooks, ", book, books);
                 }
                 else {
                     console.log(`La conversion de l'id ${bookId} en nombre a échoué.`);
@@ -132,6 +129,4 @@ class SearchService {
         return results ? results : null;
     }
 }
-
 export default SearchService;
-

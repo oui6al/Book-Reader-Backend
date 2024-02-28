@@ -58,7 +58,7 @@ class GraphSearchService {
         }
     }
 }
-const config = Config.getInstance();
+Config.getInstance();
 const execute = new GraphSearchService();
 await execute.CreateGraph();
 await execute.GetBetweenessValues();
