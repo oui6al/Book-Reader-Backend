@@ -120,7 +120,7 @@ class GraphService {
             if (!book1 || !book2) {
                 continue;
             }
-            if (element.similarity > 0) {
+            if (element.similarity > Constants.GRAPH_SIMILARITY) {
                 try {
                     const graphBook = new GraphBook(book2.id, book2.title, book2.subjects, book2.authors);
                     await neo4jService.MakeGraph({ id: book1.id }, graphBook, "neighbours", element.similarity);

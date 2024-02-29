@@ -108,7 +108,7 @@ class MongoService {
             throw new Error('Insert reverse index : Collection not set. Call SetConnection first.');
         }
     }
-    async GetBook(bookId) {
+    async getBook(bookId) {
         if (this.collection) {
             const existingIndex = await this.collection?.findOne({ id: bookId });
             if (existingIndex) {

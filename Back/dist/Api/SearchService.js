@@ -2,6 +2,7 @@ import MongoService from '../Index/Services/MongoService.js';
 import Config from '../Index/Tools/Config.js';
 import Constants from '../Index/Tools/Constants.js';
 import Tokenizer from '../Index/Tools/Tokenizer.js';
+import GraphSearchService from './GraphSearchService.js';
 class SearchService {
     logger;
     reverseIndex = null;
@@ -17,15 +18,30 @@ class SearchService {
         this.reverseIndex = await mongoService.GetAllReversedIndex();
         mongoService.CloseConnection();
     }
-    async SimpleSearch(searchString) {
-        await this.GetReverseIndex();
+    async getSearchResult(searchString, queryType) {
         let books = [];
-        books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
-        console.log("simplesearch", books);
+        await this.GetReverseIndex();
+        if (queryType === "simple") {
+            books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
+        }
+        else if (queryType === "advanced") {
+            books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, true)));
+        }
         return books;
     }
-    async AdvancedSearch(searchRegex) {
-        return await this.GetBooks(this.OrderByScore(await this.Search(searchRegex, true)));
+    async resortBooks(books, sort) {
+        let sortedBooks = [];
+        if (sort === "betweenness") {
+            const graphSearchService = new GraphSearchService();
+            await graphSearchService.CreateGraph();
+            sortedBooks = await this.GetBooks(await graphSearchService.GetBetweennessValues(books));
+        }
+        else if (sort === "closeness") {
+            const graphSearchService = new GraphSearchService();
+            await graphSearchService.CreateGraph();
+            sortedBooks = await this.GetBooks(await graphSearchService.GetClosenessValues(books));
+        }
+        return sortedBooks;
     }
     async Search(searchString, useRegex) {
         let totalOccurences = [];
@@ -44,7 +60,6 @@ class SearchService {
                 }
             });
         }
-        // Calculer un score un peu plus complexe?
         totalOccurences = await this.CalculateTfIdf(totalOccurences);
         return this.ResultSum(totalOccurences);
     }
@@ -96,22 +111,30 @@ class SearchService {
                 const bookIdParsed = parseInt(bookId, 10);
                 if (!isNaN(bookIdParsed)) {
                     // Obtenir le livre par son ID et ajouter à la liste
-                    const book = await mongoService.GetBook(bookIdParsed);
+                    const book = await mongoService.getBook(bookIdParsed);
                     if (book) {
                         books.push(book);
                     }
                 }
                 else {
-                    console.log(`La conversion de l'id ${bookId} en nombre a échoué.`);
+                    this.logger.getLogger().debug(`La conversion de l'id ${bookId} en nombre a échoué.`);
                 }
             }
             catch (error) {
-                console.log(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
+                this.logger.getLogger().error(`Une erreur est survenue lors du traitement de ${bookId}:`, error);
             }
         }
-        console.log("gtBooks", books);
         await mongoService.CloseConnection();
         return books;
+    }
+    async fetchBook(id) {
+        // Connection à la base.
+        const mongoService = new MongoService(Config.getInstance().getMongoDbUrl());
+        await mongoService.OpenConnection();
+        mongoService.SetCollection(Constants.MONGO_BOOK_COLLECTION);
+        const book = await mongoService.getBook(id);
+        await mongoService.CloseConnection();
+        return book;
     }
     OrderByScore(scores) {
         const entriesArray = Object.entries(scores);
