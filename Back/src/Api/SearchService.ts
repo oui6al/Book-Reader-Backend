@@ -5,6 +5,7 @@ import Config from '../Index/Tools/Config.js';
 import Constants from '../Index/Tools/Constants.js';
 import Logger from '../Index/Tools/Logger.js';
 import Tokenizer from '../Index/Tools/Tokenizer.js';
+import GraphSearchService from './GraphSearchService.js';
 
 class SearchService {
     logger: Logger;
@@ -25,17 +26,30 @@ class SearchService {
         mongoService.CloseConnection();
     }
 
-    async SimpleSearch(searchString: string): Promise<Array<Book>> {
-        await this.GetReverseIndex();
+    async getSearchResult(searchString: string, queryType: string): Promise<Array<Book>> {
         let books: Array<Book> = []; 
-        books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
+        await this.GetReverseIndex();
+        if(queryType === "simple"){
+            books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, false)));
+        } else if( queryType === "advanced"){
+            books = await this.GetBooks(this.OrderByScore(await this.Search(searchString, true)));
+        } 
         return books;
     }
-
-    async AdvancedSearch(searchRegex: string): Promise<Array<Book>>  {
-        await this.GetReverseIndex();
-        return await this.GetBooks(this.OrderByScore(await this.Search(searchRegex, true)));
+    async resortBooks(books: Array<number>, sort: string): Promise<Array<Book>>  {
+        let sortedBooks: Array<Book> = [];
+       if(sort === "betweenness"){
+            const graphSearchService = new GraphSearchService();
+            await graphSearchService.CreateGraph();
+            sortedBooks = await this.GetBooks(await graphSearchService.GetBetweennessValues(books));
+        } else if(sort === "closeness"){
+            const graphSearchService = new GraphSearchService();
+            await graphSearchService.CreateGraph();
+            sortedBooks = await this.GetBooks(await graphSearchService.GetClosenessValues(books));
+        }
+        return sortedBooks
     }
+
 
     async Search(searchString: string, useRegex: boolean): Promise<Record<string, number>> {
         let totalOccurences: Array<Record<string, number>> = [];
@@ -56,7 +70,6 @@ class SearchService {
             });
 
         }
-        // Calculer un score un peu plus complexe?
 
         totalOccurences = await this.CalculateTfIdf(totalOccurences);
 

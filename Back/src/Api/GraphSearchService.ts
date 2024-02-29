@@ -37,39 +37,67 @@ class GraphSearchService {
   }
 
 
-  async GetBetweenessValues(): Promise<[string, number][]> {
+
+
+  async StoreCentralityScores() {
     try {
       if (this.graph) {
         const betweenness = betweennessCentrality(this.graph);
-        const centralityArray = Object.entries(betweenness);
-        return centralityArray.sort((a, b) => b[1] - a[1]);
+        const closeness = closenessCentrality(this.graph);
+
+        const betweennessArray = Object.entries(betweenness);
+        const closenessArray = Object.entries(closeness);
+
+        for (const [bookId, score] of betweennessArray) {
+          await this.neo4jService.storeBetweennessScore(parseInt(bookId), score);
+        }
+
+        for (const [bookId, score] of closenessArray) {
+          await this.neo4jService.storeClosenessScore(parseInt(bookId), score);
+        }
       }
-      return [];
-    }
-    catch (error: any) {
-      throw new Error("Impossible de récupérer le betweeness des noeuds.", error);
+    } catch (error: any) {
+      throw new Error("Impossible de stocker les scores de centralité.", error);
     }
   }
 
-
-  async GetClosenessValues(): Promise<[string, number][]> {
+  async GetBetweennessValues(bookIds: Array<number>): Promise<[bookId: string,score: number][]> {
+    let centralityArray : number[][] = [];
     try {
       if (this.graph) {
-        const closeness = closenessCentrality(this.graph);
-        const centralityArray = Object.entries(closeness);
-        return centralityArray.sort((a, b) => b[1] - a[1]);
-      }
-      return [];
+        let betweenness = []
+        for(let i = 0;i<bookIds.length;i++){
+          betweenness[i] = [bookIds[i],await this.neo4jService.getBetweennessScore(bookIds[i])];
+        }
+        centralityArray = betweenness.sort((a, b) => b[0] - a[0]);
+       } 
+    } catch (error: any) {
+      throw new Error("Impossible de récupérer le betweeness des noeuds.", error);
     }
-    catch (error: any) {
+    let resultat: [bookId: string,score: number][] = []
+    centralityArray.forEach(([bookId, score]) => resultat.push([bookId.toString(), score]));
+    return resultat;
+  }
+
+ async GetClosenessValues(bookIds: Array<number>): Promise<[bookId: string,score: number][]> {
+    let centralityArray : number[][] = [];
+    try {
+      if (this.graph) {
+        let closeness = []
+        for(let i = 0;i<bookIds.length;i++){
+          closeness[i] = [bookIds[i],await this.neo4jService.getClosenessScore(bookIds[i])];
+        }
+        centralityArray = closeness.sort((a, b) => b[0] - a[0]);
+       } 
+    } catch (error: any) {
       throw new Error("Impossible de récupérer le closeness des noeuds.", error);
     }
-  }
+    let resultat: [bookId: string,score: number][] = []
+    centralityArray.forEach(([bookId, score]) => resultat.push([bookId.toString(), score]));
+    return resultat;
+ }
+ 
+
 }
 
-Config.getInstance();
-const execute = new GraphSearchService();
-await execute.CreateGraph();
-await execute.GetBetweenessValues();
-await execute.GetClosenessValues();
-let a = 2;
+export default GraphSearchService;

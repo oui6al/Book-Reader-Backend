@@ -89,6 +89,76 @@ class Neo4jService {
             session.close();
         }
     }
+
+    async storeBetweennessScore(bookId: number, score: number) {
+        const session = this.driver.session();
+        try {
+            const result = await session.run(
+                `MATCH (b:Book {id: $bookId})
+                 SET b.betweenness = $score
+                 RETURN b`,
+                { bookId: bookId, score: score }
+            );
+            return result.records;
+        } catch (error) {
+            console.error(`Failed to store betweenness score: ${error}`);
+        } finally {
+            session.close();
+        }
+    }
+
+    async storeClosenessScore(bookId: number, score: number) {
+        const session = this.driver.session();
+        try {
+            const result = await session.run(
+                `MATCH (b:Book {id: $bookId})
+                 SET b.closeness = $score
+                 RETURN b`,
+                { bookId: bookId, score: score }
+            );
+            return result.records;
+        } catch (error) {
+            console.error(`Failed to store closeness score: ${error}`);
+        } finally {
+            session.close();
+        }
+    }
+
+    async getBetweennessScore(bookId: number): Promise<number> {
+        const session = this.driver.session();
+        let score = 0;
+        try {
+            const result = await session.run(
+                `MATCH (b:Book {id: $bookId})
+                 RETURN b.betweenness AS betweenness`,
+                { bookId: bookId }
+            );
+            score = result.records.map(record => record.get('betweenness')).pop() as number;
+        } catch (error) {
+            console.error(`Failed to get betweenness score: ${error}`);
+        } finally {
+            session.close();
+        }
+        return score;
+    }
+
+    async getClosenessScore(bookId: number): Promise<number> {
+        const session = this.driver.session();
+        let score = 0;
+        try {
+            const result = await session.run(
+                `MATCH (b:Book {id: $bookId})
+                 RETURN b.closeness AS closeness`,
+                { bookId: bookId }
+            );
+            score = result.records.map(record => record.get('closeness')).pop() as number;
+        } catch (error) {
+            console.error(`Failed to get closeness score: ${error}`);
+        } finally {
+            session.close();
+        }
+        return score;
+    }
 }
 
 export default Neo4jService;

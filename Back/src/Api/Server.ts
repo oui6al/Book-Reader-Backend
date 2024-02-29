@@ -3,6 +3,7 @@ import cors from 'cors';
 import  SearchService  from './SearchService.js';
 import axios from 'axios';
 
+
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -12,7 +13,8 @@ const searchService = new SearchService();
 app.post('/api/search', async (req, res) => {
     try {
         const input = req.body.query;
-        const books =  await searchService.SimpleSearch(input); 
+        const sort = req.body.sort;
+        const books =  await searchService.getSearchResult(input,"simple"); 
         res.json(books);
     } catch (error) {
         console.error(error);
@@ -24,8 +26,21 @@ app.post('/api/search', async (req, res) => {
 app.post('/api/advanced-search', async (req, res) => {
     try {
         const input = req.body.query;
-        const books = await searchService.AdvancedSearch(input)
+        const sort = req.body.sort;
+        const books = await searchService.getSearchResult(input,"advanced")
         res.json(books);
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred' });
+    }
+});
+
+// POST route pour le tri des livres
+app.post('/api/sort', async (req, res) => {
+    try {
+        const books = req.body.books;
+        const sort = req.body.option;
+        const sortedBooks = await searchService.resortBooks(books,sort);
+        res.json(sortedBooks);
     } catch (error) {
         res.status(500).json({ error: 'An error occurred' });
     }
@@ -34,7 +49,6 @@ app.post('/api/advanced-search', async (req, res) => {
 // GET route pour récupérer le HTML d'un livre avec son id 
 app.get('/api/book/:id', async (req, res) => {
     try {
-        console.log("bla bla?")
         const id  = parseInt(req.params.id);
         const book = await searchService.fetchBook(id);
         console.log(book);
